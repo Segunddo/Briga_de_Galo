@@ -26,6 +26,16 @@ public abstract class Connection implements Runnable {
         this.onDisconnect = onDisconnect;
     }
 
+    protected Integer playerNumber;
+
+    public Integer getPlayerNumber() {
+        return playerNumber;
+    }
+
+    public void setPlayerNumber(Integer playerNumber) {
+        this.playerNumber = playerNumber;
+    }
+
     // construtor da classe pai aqui que chava como super nas outras pela herança
     public Connection(Socket socket, Integer id, Buffer<String> outputBuffer, BufferedReader reader) {
         this.socket = socket;

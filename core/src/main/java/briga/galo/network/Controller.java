@@ -11,20 +11,9 @@ import java.net.Socket;
 // classe de recebimento dos dados das esp32 ou controle com o sistema linear de recebimento
 public class Controller extends Connection {
 
-    // identificação para ajustar o multiplayer
-    private Integer playerNumber;
-
     // joga os dados de conexão do manager pra estabelecer a conexão
     public Controller(Socket socket, Integer id, Buffer<String> outputBuffer, BufferedReader reader) {
         super(socket, id, outputBuffer, reader);
-    }
-
-    public Integer getPlayerNumber() {
-        return playerNumber;
-    }
-
-    public void setPlayerNumber(Integer playerNumber) {
-        this.playerNumber = playerNumber;
     }
 
     // metodo de conexão via tcp
@@ -46,6 +35,9 @@ public class Controller extends Connection {
             System.err.println("Erro ao fechar controller " + id + ": " + e.getMessage());
         }
         System.out.println("Controller " + id + " desconectado.");
+        if (onDisconnect != null) {
+            onDisconnect.run();
+        }
     }
 
     // metodo de tratamento de dados para ser interpretado e implementado dependendo dos comandos do jogo

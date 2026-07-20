@@ -28,7 +28,7 @@ public class ConnectionManager implements Runnable {
     private volatile boolean running;
     private int proximoId;
 
-    // limite de jogadores simultaneos
+    // limite de jogadores simultaneos (Controller OU Device contam, os dois mandam input)
     private static final int MAX_JOGADORES = 4;
 
     // instanciação das variáveis de serviço
@@ -62,13 +62,15 @@ public class ConnectionManager implements Runnable {
     }
 
     // usa um sistema simples de aperto de mão para identificar e armazenar as conexões
-    // primeira linha que o cliente manda tem que ser "CONTROLLER" ou "DEVICE pra identificar"
+    // primeira linha que o cliente manda tem que ser "CONTROLLER" ou "DEVICE" pra identificar
     private Connection identificarEInstanciar(Socket socket) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String tipo = reader.readLine();
 
-        if (contarDispositivos() >= MAX_JOGADORES) {
-            System.out.println("Controller recusado: limite de " + MAX_JOGADORES + " jogadores atingido.");
+        // o corte de vaga vale pros dois tipos: Controller e Device mandam
+        // input de jogador, entao os dois disputam o mesmo limite
+        if (contarJogadores() >= MAX_JOGADORES) {
+            System.out.println("Conexao recusada: limite de " + MAX_JOGADORES + " jogadores atingido.");
             socket.close();
             return null;
         }
@@ -89,19 +91,18 @@ public class ConnectionManager implements Runnable {
 
     private synchronized void registrar(Connection conexao) {
         connections.add(conexao);
-        int numeroDoJogador = contarDispositivos();
-        if (conexao instanceof Controller) {
-            ((Controller) conexao).setPlayerNumber(numeroDoJogador);
-        }
-        if (conexao instanceof Device) {
-            ((Device) conexao).setPlayerNumber(numeroDoJogador);
-        }
+        // Controller e Device sempre ganham um numero
+        int numeroDoJogador = contarJogadores(); // ja inclui a que acabou de entrar
+        conexao.setPlayerNumber(numeroDoJogador);
     }
 
-    private synchronized int contarDispositivos() {
+    // conta quem ocupa vaga de jogador
+    private synchronized int contarJogadores() {
         int total = 0;
         for (Connection c : connections) {
+            if (c instanceof Controller || c instanceof Device) {
                 total++;
+            }
         }
         return total;
     }
@@ -110,6 +111,11 @@ public class ConnectionManager implements Runnable {
         return connections.size();
     }
 
+    public synchronized int totalJogadores() {
+        return contarJogadores();
+    }
+
+    // chamado via callback quando uma conexao desconecta, pra ela sair da lista e liberar o slot
     private synchronized void remover(Connection conexao) {
         connections.remove(conexao);
         System.out.println("Conexao " + conexao.getId() + " removida (total conectado agora: " + connections.size() + ").");
@@ -132,6 +138,8 @@ public class ConnectionManager implements Runnable {
         synchronized (this) {
             copia = new ArrayList<>(connections);
         }
+
+        // evita quebra do iterador pra destruir com segurança
         for (Connection c : copia) {
             c.disconnect();
         }

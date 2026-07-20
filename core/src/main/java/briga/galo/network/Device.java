@@ -17,21 +17,10 @@ public class Device extends Connection {
     private final Buffer<String> inputBuffer;
     private Thread exibicaoThread;
 
-    // identificação para ajustar o multiplayer
-    private Integer playerNumber;
-
     // construtor que instancia a entrada de dados e a saída que vai pra connection
     public Device(Socket socket, Integer id, Buffer<String> outputBuffer, BufferedReader reader) {
         super(socket, id, outputBuffer, reader);
         this.inputBuffer = new Buffer<>();
-    }
-
-    public Integer getPlayerNumber() {
-        return playerNumber;
-    }
-
-    public void setPlayerNumber(Integer playerNumber) {
-        this.playerNumber = playerNumber;
     }
 
     // metodo que passa o buffer da classe pro programa tratar
@@ -97,6 +86,6 @@ public class Device extends Connection {
         if (raw == null || raw.isBlank()) {
             return null;
         }
-        return "DEV;" + id + ";" + raw.trim();
+        return "DEV;" + id + ";P" + playerNumber + ";" + raw.trim();
     }
 }

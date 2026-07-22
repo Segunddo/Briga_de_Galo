@@ -9,7 +9,11 @@ public class Player {
     // Apenas Imagens e Visual
     private Texture imgIdle;
     private Texture imgAttack;
+    private Texture imgFallingAttack;
+    private Texture imgFlying;
+    private Texture imgWalking;
     private Texture currentImage;
+
 
     public Player(Control control) {
         this.control = control;
@@ -17,6 +21,9 @@ public class Player {
         // Carrega as imagens
         this.imgIdle = new Texture("idle.png");
         this.imgAttack = new Texture("attack.png");
+        this.imgFallingAttack = new Texture("falling_attack.png");
+        this.imgFlying = new Texture("flying.png");
+        this.imgWalking = new Texture("walking.png");
         this.currentImage = imgIdle;
     }
 
@@ -29,14 +36,19 @@ public class Player {
 
         switch (action) {
             case ATTACK:
-                // currentImage = imgAttack;
+                 currentImage = imgAttack;
                 break;
             case IDLE:
+                currentImage = imgIdle;
+                break;
             case WALK_RIGHT:
+                currentImage = imgWalking;
+                break;
             case WALK_LEFT:
+                currentImage = imgWalking;
+                break;
             case JUMP:
-                // Se ainda não tiver imagens para tudo, joga pro Idle
-                currentImage = imgAttack;
+                currentImage = imgFlying;
                 break;
         }
     }

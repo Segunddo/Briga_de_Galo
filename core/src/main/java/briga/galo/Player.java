@@ -1,67 +1,111 @@
 package briga.galo;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Player {
     private Control control;
 
-    // Apenas Imagens e Visual
-    private Texture imgIdle;
-    private Texture imgAttack;
-    private Texture imgFallingAttack;
-    private Texture imgFlying;
-    private Texture imgWalking;
-    private Texture imgWalkingRight;
-    private Texture currentImage;
+    private Texture LeftSprite;
+    private Texture RightSprite;
+    private Animation<TextureRegion> walkRightAnimation;
+    private Animation<TextureRegion> walkLeftAnimation;
 
+    // imagens estaticas
+    private TextureRegion imgIdle;
+    private TextureRegion imgJump;
+    private TextureRegion imgLeft;
+    private TextureRegion imgRight;
+
+    // Variável para controlar o tempo da animação
+    private float stateTime;
+
+    // Região atual que será desenhada
+    private TextureRegion currentFrame;
+
+    // Configurações do Sprite (Baseado no pedido de 50x50px)
+    private static final int FRAME_COLS = 4; // Número de quadros na horizontal
+    private static final int FRAME_ROWS = 1; // Número de linhas
+    private static final int TILE_WIDTH = 50; // Largura de cada quadro
+    private static final int TILE_HEIGHT = 50; // Altura de cada quadro
 
     public Player(Control control) {
         this.control = control;
 
-        // Carrega as imagens
-        this.imgIdle = new Texture("idle.png");
-        this.imgAttack = new Texture("attack.png");
-        this.imgFallingAttack = new Texture("falling_attack.png");
-        this.imgFlying = new Texture("flying.png");
-        this.imgWalking = new Texture("walking.png");
-        this.imgWalkingRight = new Texture("walkingRight.png");
-        this.currentImage = imgIdle;
+        this.RightSprite = new Texture("galo_spritesheet_right.png");
+        this.LeftSprite = new Texture("galo_spritesheet_left.png");
+
+        // esse tipo é um recorte da imagem
+        // como tem 4 imagens para cada animação, dividi em 1 linha e 4 colunas
+        TextureRegion[][] tmpRight = TextureRegion.split(RightSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpLeft = TextureRegion.split(LeftSprite, TILE_WIDTH, TILE_HEIGHT);
+
+        // Velocidade da animação (0.1f = 10 quadros por segundo)
+        float frameDuration = 0.2f;
+
+        // roda a animação em loop
+        TextureRegion[] walkRightFrames = tmpRight[0];
+        this.walkRightAnimation = new Animation<>(frameDuration, walkRightFrames);
+        this.walkRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        TextureRegion[] walkLeftFrames = tmpLeft[0];
+        this.walkLeftAnimation = new Animation<>(frameDuration, walkLeftFrames);
+        this.walkLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // peguei poses estaticas do "vetor" de imagens
+        this.imgIdle = tmpRight[0][0]; // Galo parado olhando pra direita
+        this.imgJump = tmpRight[0][1]; // Um quadro qualquer pra pose de pulo
+        this.imgLeft = tmpLeft[0][0];
+        this.imgRight = tmpRight[0][0];
+
+        this.currentFrame = imgIdle;
+        this.stateTime = 0f;
     }
 
     public void visual_refresh(float delta) {
-        // Controle atualiza a matemática
+        // Controle atualiza a física e matemática
         control.update_logic(delta);
 
-        // Controle diz qual animação deve tocar
+        // Atualiza o tempo acumulado da animação
+        stateTime += delta;
+
+        // Pega o estado visual desejado pelo controle
         Utils.Action action = control.get_visual_state();
 
+        // Seleciona o quadro correto baseado na animação e no tempo
         switch (action) {
-            case ATTACK:
-                 currentImage = imgAttack;
-                break;
-            case IDLE:
-                currentImage = imgIdle;
-                break;
             case WALK_RIGHT:
-                currentImage = imgWalkingRight;
+                // getKeyFrame pega o quadro correto baseado no stateTime atual
+                currentFrame = walkRightAnimation.getKeyFrame(stateTime);
                 break;
             case WALK_LEFT:
-                currentImage = imgWalking;
+                currentFrame = walkLeftAnimation.getKeyFrame(stateTime);
                 break;
             case JUMP:
-                currentImage = imgFlying;
+                currentFrame = imgJump;
+                break;
+            case LEFT_HANDLE:
+                currentFrame = imgLeft;
+                break;
+            case RIGHT_HANDLE:
+                currentFrame = imgRight;
+                break;
+            default:
+                currentFrame = imgIdle;
                 break;
         }
     }
 
     public void draw(SpriteBatch batch) {
-        // Usa o X e Y diretos do controle para desenhar
-        batch.draw(currentImage, control.x, control.y);
+        if (currentFrame != null) {
+            batch.draw(currentFrame, control.x, control.y, TILE_WIDTH, TILE_HEIGHT);
+        }
     }
 
     public void dispose() {
-        imgIdle.dispose();
-        imgAttack.dispose();
+        LeftSprite.dispose();
+        RightSprite.dispose();
     }
 }

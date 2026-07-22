@@ -22,6 +22,12 @@ public class Control {
     private float currentJumpForce = BASE_JUMP;
     private float currentGravity = BASE_GRAVITY;
 
+    // Mapeamento de teclas — cada instância (cada jogador) tem o seu próprio
+    private final int keyLeft;
+    private final int keyRight;
+    private final int keyJump;
+    private final int keyAttack;
+
     // Variáveis de estado
     private boolean isAttacking = false;
     private boolean isWalkingRight = false;
@@ -29,10 +35,22 @@ public class Control {
     private boolean isHoldingJump = false;
     private boolean isHoldingRight = false;
     private boolean isHoldingLeft = false;
+    private boolean isHeadingLeft = false;  // variavel para identificar o ultimo lado que o jogador olhou
+    private boolean isHeadingRight = false;
 
+    // Construtor antigo: mantém WASD + espaço como padrão (bom pro jogador 1)
     public Control(float startX, float startY) {
+        this(startX, startY, Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE);
+    }
+
+    // Construtor novo: escolhe as teclas de cada jogador
+    public Control(float startX, float startY, int keyLeft, int keyRight, int keyJump, int keyAttack) {
         this.x = startX;
         this.y = startY;
+        this.keyLeft = keyLeft;
+        this.keyRight = keyRight;
+        this.keyJump = keyJump;
+        this.keyAttack = keyAttack;
     }
 
     // Método principal que chama os módulos
@@ -47,10 +65,10 @@ public class Control {
     private void read_inputs() {
         isWalkingLeft = false;
         isWalkingRight = false;
-        isAttacking = Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
-        isHoldingJump = Gdx.input.isKeyPressed(Input.Keys.W);
-        isHoldingRight = Gdx.input.isKeyPressed(Input.Keys.D);
-        isHoldingLeft = Gdx.input.isKeyPressed(Input.Keys.A);
+        isAttacking = Gdx.input.isKeyJustPressed(keyAttack);
+        isHoldingJump = Gdx.input.isKeyPressed(keyJump);
+        isHoldingRight = Gdx.input.isKeyPressed(keyRight);
+        isHoldingLeft = Gdx.input.isKeyPressed(keyLeft);
     }
 
     // Movimento no Eixo X
@@ -60,10 +78,14 @@ public class Control {
         if (isHoldingRight) {
             x += currentSpeed * delta;
             isWalkingRight = true;
+            isHeadingRight = true;
+            isHeadingLeft = false;
         }
         if (isHoldingLeft) {
             x -= currentSpeed * delta;
             isWalkingLeft = true;
+            isHeadingLeft = true;
+            isHeadingRight = false;
         }
     }
 
@@ -103,8 +125,12 @@ public class Control {
             return Utils.Action.JUMP;
         } else if (isWalkingRight) {
             return Utils.Action.WALK_RIGHT;
-        } else if (isWalkingLeft){
+        } else if (isWalkingLeft) {
             return Utils.Action.WALK_LEFT;
+        } else if (isHeadingLeft) {
+            return Utils.Action.LEFT_HANDLE;
+        } else if (isHeadingRight) {
+            return Utils.Action.RIGHT_HANDLE;
         } else {
             return Utils.Action.IDLE;
         }

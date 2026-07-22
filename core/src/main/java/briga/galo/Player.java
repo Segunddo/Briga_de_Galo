@@ -12,6 +12,7 @@ public class Player {
     private Texture imgFallingAttack;
     private Texture imgFlying;
     private Texture imgWalking;
+    private Texture imgWalkingRight;
     private Texture currentImage;
 
 
@@ -24,6 +25,7 @@ public class Player {
         this.imgFallingAttack = new Texture("falling_attack.png");
         this.imgFlying = new Texture("flying.png");
         this.imgWalking = new Texture("walking.png");
+        this.imgWalkingRight = new Texture("walkingRight.png");
         this.currentImage = imgIdle;
     }
 
@@ -42,7 +44,7 @@ public class Player {
                 currentImage = imgIdle;
                 break;
             case WALK_RIGHT:
-                currentImage = imgWalking;
+                currentImage = imgWalkingRight;
                 break;
             case WALK_LEFT:
                 currentImage = imgWalking;

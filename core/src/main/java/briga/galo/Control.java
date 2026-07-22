@@ -14,7 +14,7 @@ public class Control {
     // STATUS BASE
     private final float BASE_SPEED = 400f;
     private final float BASE_JUMP = 600f;
-    private final float BASE_GRAVITY = 1500f;
+    private final float BASE_GRAVITY = 1200f;
     private final float BASE_GLIDE = 300f;
 
     // STATUS ATUAIS
@@ -24,7 +24,8 @@ public class Control {
 
     // Variáveis de estado
     private boolean isAttacking = false;
-    private boolean isWalking = false;
+    private boolean isWalkingRight = false;
+    private boolean isWalkingLeft = false;
     private boolean isHoldingJump = false;
     private boolean isHoldingRight = false;
     private boolean isHoldingLeft = false;
@@ -44,7 +45,8 @@ public class Control {
 
     // Apenas lê o que o jogador quer fazer
     private void read_inputs() {
-        isWalking = false;
+        isWalkingLeft = false;
+        isWalkingRight = false;
         isAttacking = Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
         isHoldingJump = Gdx.input.isKeyPressed(Input.Keys.W);
         isHoldingRight = Gdx.input.isKeyPressed(Input.Keys.D);
@@ -53,14 +55,15 @@ public class Control {
 
     // Movimento no Eixo X
     private void apply_horizontal_movement(float delta) {
-        isWalking = false; // Zera o estado todo frame
+        isWalkingLeft = false;
+        isWalkingRight = false; // Zera o estado todo frame
         if (isHoldingRight) {
             x += currentSpeed * delta;
-            isWalking = true;
+            isWalkingRight = true;
         }
         if (isHoldingLeft) {
             x -= currentSpeed * delta;
-            isWalking = true;
+            isWalkingLeft = true;
         }
     }
 
@@ -98,8 +101,10 @@ public class Control {
             return Utils.Action.ATTACK;
         } else if (!isOnFloor) {
             return Utils.Action.JUMP;
-        } else if (isWalking) {
+        } else if (isWalkingRight) {
             return Utils.Action.WALK_RIGHT;
+        } else if (isWalkingLeft){
+            return Utils.Action.WALK_LEFT;
         } else {
             return Utils.Action.IDLE;
         }

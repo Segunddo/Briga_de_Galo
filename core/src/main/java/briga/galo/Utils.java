@@ -6,6 +6,8 @@ public class Utils {
         WALK_LEFT,
         JUMP,
         ATTACK,
+        LEFT_HANDLE,
+        RIGHT_HANDLE,
         IDLE
     }
 }

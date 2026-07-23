@@ -109,4 +109,9 @@ public class Control {
             return Utils.Action.IDLE;
         }
     }
+
+    // Retorna se o usuário clicou em atacar
+    public boolean is_attacking() {
+        return this.isAttacking;
+    }
 }

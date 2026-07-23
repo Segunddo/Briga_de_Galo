@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Player {
     private Control control;
+    private int playerLife;
+    private int playerHitBox;
 
     // Apenas Imagens e Visual
     private Texture imgIdle;
@@ -18,6 +20,8 @@ public class Player {
 
     public Player(Control control) {
         this.control = control;
+        playerLife = 100; // Valor padrão (100 de vida)
+        playerHitBox = 20; // 20x20
 
         // Carrega as imagens
         this.imgIdle = new Texture("idle.png");
@@ -52,6 +56,36 @@ public class Player {
             case JUMP:
                 currentImage = imgFlying;
                 break;
+        }
+    }
+
+    public int get_player_life() {
+        return playerLife;
+    }
+
+    public int get_player_hitBox() {
+        return playerHitBox;
+    }
+
+    public float get_x() {
+        return control.x;
+    }
+
+    public float get_y() {
+        return control.y;
+    }
+
+    // Retorna se o usuário clicou em atacar
+    public boolean is_attacking() {
+        return control.is_attacking();
+    }
+
+    // Método para aplicar o dano
+    public void take_damage(int damage) {
+        this.playerLife -= damage;
+        // Evita que a vida fique negativa
+        if (this.playerLife < 0) {
+            this.playerLife = 0;
         }
     }
 

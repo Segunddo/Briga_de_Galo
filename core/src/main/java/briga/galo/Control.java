@@ -13,7 +13,7 @@ public class Control {
     // STATUS BASE (Constantes)
     private final float BASE_SPEED = 400f;
     private final float BASE_JUMP = 600f;
-    private final float BASE_GRAVITY = 1200f;
+    private final float BASE_GRAVITY = 500f;
     private final float BASE_GLIDE = 300f; // Gravidade menor ao segurar o pulo caindo
 
     // STATUS ATUAIS (Podem ser alterados por itens ou debuffs no futuro)
@@ -105,11 +105,17 @@ public class Control {
     }
 
     // Retorna a animação que deve ser tocada na classe Player
+    // Retorna a animação que deve ser tocada na classe Player
     public Utils.Action get_visual_state() {
         if (isAttacking) {
             return Utils.Action.ATTACK;
         } else if (!isOnFloor) {
-            return Utils.Action.JUMP;
+            // Se não está no chão (seja subindo no pulo ou caindo), toca a animação de voo
+            if (isHeadingLeft) {
+                return Utils.Action.FLY_LEFT;
+            } else {
+                return Utils.Action.FLY_RIGHT;
+            }
         } else if (isWalkingRight) {
             return Utils.Action.WALK_RIGHT;
         } else if (isWalkingLeft) {

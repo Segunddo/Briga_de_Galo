@@ -5,7 +5,17 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public class Player {
+public class Player implements Runnable {
+
+    //PROBLEMA: DO JEITO QUE AS THREADS FORAM CRIADAS
+    //GEROU PROBLEMA DE RACE CONDITION
+    //PORTANTO, VOU USAR MONITORES PARA RESOLVER.
+
+    //DO JEITO QUE ESTA AGORA, VARIAS THREADS ESTAO ACESSANDO AS POSIÇÕES SIMULTANEAMENTE
+    //ISSO PODE GERAR PROBLEMAS NA HORA DE CHECAR COLISOES
+
+    private volatile boolean running = true;
+
     private Control control;
     private InputHandler inputHandler;
     private int playerLife;
@@ -13,57 +23,65 @@ public class Player {
 
     private Texture LeftSprite;
     private Texture RightSprite;
+    private Texture flyRightSprite;
+    private Texture flyLeftSprite;
+
     private Animation<TextureRegion> walkRightAnimation;
     private Animation<TextureRegion> walkLeftAnimation;
+    private Animation<TextureRegion> flyRightAnimation;
+    private Animation<TextureRegion> flyLeftAnimation;
 
     // imagens estaticas
     private TextureRegion imgIdle;
-    private TextureRegion imgJump;
     private TextureRegion imgLeft;
     private TextureRegion imgRight;
+    // Região atual que será desenhada
+    private TextureRegion currentFrame;
+
+    // GUARDA A AÇÃO ATUAL PARA SABERMOS QUANDO MUDAR
+    private Utils.Action currentAction = Utils.Action.IDLE;
 
     // Variável para controlar o tempo da animação
     private float stateTime;
 
-    // Região atual que será desenhada
-    private TextureRegion currentFrame;
+    // Configurações do Sprite (Andar: 1200x300 -> 4 quadros de 300x300)
+    private static final int TILE_WIDTH = 300;
+    private static final int TILE_HEIGHT = 300;
 
-    // Configurações do Sprite (Baseado no pedido de 50x50px)
-    private static final int FRAME_COLS = 4; // Número de quadros na horizontal
-    private static final int FRAME_ROWS = 1; // Número de linhas
-    private static final int TILE_WIDTH = 50; // Largura de cada quadro
-    private static final int TILE_HEIGHT = 50; // Altura de cada quadro
-
-    // Construtor atualizado recebendo o InputHandler
     public Player(Control control, InputHandler inputHandler) {
         this.control = control;
         this.inputHandler = inputHandler;
-        playerLife = 100; // Valor padrão (100 de vida)
-        playerHitBox = 20; // 20x20
+        this.playerLife = 100;
+        this.playerHitBox = 300;
 
-        this.RightSprite = new Texture("galo_spritesheet_right.png");
-        this.LeftSprite = new Texture("galo_spritesheet_left.png");
+        this.RightSprite = new Texture("walking_right_sprite.png");
+        this.LeftSprite = new Texture("walking_left_sprite.png");
+        this.flyRightSprite = new Texture("fly_right_sprite.png");
+        this.flyLeftSprite = new Texture("fly_left_sprite.png");
 
-        // esse tipo é um recorte da imagem
-        // como tem 4 imagens para cada animação, dividi em 1 linha e 4 colunas
+        // Corta os spritesheet nas dimensões corretas
         TextureRegion[][] tmpRight = TextureRegion.split(RightSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpLeft = TextureRegion.split(LeftSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpFlyRight = TextureRegion.split(flyRightSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpFlyLeft = TextureRegion.split(flyLeftSprite, TILE_WIDTH, TILE_HEIGHT);
 
-        // Velocidade da animação (0.1f = 10 quadros por segundo)
-        float frameDuration = 0.2f;
+        float frameDuration = 0.1f;
 
-        // roda a animação em loop
-        TextureRegion[] walkRightFrames = tmpRight[0];
-        this.walkRightAnimation = new Animation<>(frameDuration, walkRightFrames);
+        // Animação de Andar
+        this.walkRightAnimation = new Animation<>(frameDuration, tmpRight[0]);
         this.walkRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        TextureRegion[] walkLeftFrames = tmpLeft[0];
-        this.walkLeftAnimation = new Animation<>(frameDuration, walkLeftFrames);
+        this.walkLeftAnimation = new Animation<>(frameDuration, tmpLeft[0]);
         this.walkLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // peguei poses estaticas do "vetor" de imagens
-        this.imgIdle = tmpRight[0][0]; // Galo parado olhando pra direita
-        this.imgJump = tmpRight[0][1]; // Um quadro qualquer pra pose de pulo
+        this.flyRightAnimation = new Animation<>(frameDuration, tmpFlyRight[0]);
+        this.flyRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        this.flyLeftAnimation = new Animation<>(frameDuration, tmpFlyLeft[0]);
+        this.flyLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // Poses estáticas
+        this.imgIdle = tmpRight[0][0];
         this.imgLeft = tmpLeft[0][0];
         this.imgRight = tmpRight[0][0];
 
@@ -71,37 +89,67 @@ public class Player {
         this.stateTime = 0f;
     }
 
+    @Override
+    public void run() {
+        long lastTime = System.nanoTime();
+
+        while (running) {
+            // Calcula o próprio "delta" de tempo da Thread
+            long now = System.nanoTime();
+            float threadDelta = (now - lastTime) / 1000000000f;
+            lastTime = now;
+
+            // Lê os inputs do teclado
+            if (inputHandler != null) {
+                control.set_inputs(
+                    inputHandler.isAttack(),
+                    inputHandler.isJump(),
+                    inputHandler.isRight(),
+                    inputHandler.isLeft()
+                );
+            }
+
+            // Atualiza a física na Thread
+            control.update_logic(threadDelta);
+
+            // Pausa a thread por 16 milissegundos para rodar a aprox. 60 FPS
+            // Isso impede que a Thread consuma 100% da CPU do computador
+            try {
+                Thread.sleep(16);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void stopThread() {
+        this.running = false;
+    }
+
     public void visual_refresh(float delta) {
-        // Se existir um teclado físico atrelado a este jogador, lê os dados e injeta na física
-        if (inputHandler != null) {
-            control.set_inputs(
-                inputHandler.isAttack(),
-                inputHandler.isJump(),
-                inputHandler.isRight(),
-                inputHandler.isLeft()
-            );
+        Utils.Action newAction = control.get_visual_state();
+
+        //Se a ação mudou, nós resetamos o relógio da animação!
+        if (newAction != currentAction) {
+            stateTime = 0f;
+            currentAction = newAction;
+        } else {
+            // Só avança o tempo se o personagem estiver fazendo a mesma coisa
+            stateTime += delta;
         }
 
-        // Controle atualiza a física e matemática usando os inputs recebidos
-        control.update_logic(delta);
-
-        // Atualiza o tempo acumulado da animação
-        stateTime += delta;
-
-        // Pega o estado visual desejado pelo controle
-        Utils.Action action = control.get_visual_state();
-
-        // Seleciona o quadro correto baseado na animação e no tempo
-        switch (action) {
+        switch (currentAction) {
             case WALK_RIGHT:
-                // getKeyFrame pega o quadro correto baseado no stateTime atual
                 currentFrame = walkRightAnimation.getKeyFrame(stateTime);
                 break;
             case WALK_LEFT:
                 currentFrame = walkLeftAnimation.getKeyFrame(stateTime);
                 break;
-            case JUMP:
-                currentFrame = imgJump;
+            case FLY_RIGHT:
+                currentFrame = flyRightAnimation.getKeyFrame(stateTime);
+                break;
+            case FLY_LEFT:
+                currentFrame = flyLeftAnimation.getKeyFrame(stateTime);
                 break;
             case LEFT_HANDLE:
                 currentFrame = imgLeft;
@@ -115,31 +163,14 @@ public class Player {
         }
     }
 
-    public int get_player_life() {
-        return playerLife;
-    }
+    public int get_player_life() { return playerLife; }
+    public int get_player_hitBox() { return playerHitBox; }
+    public float get_x() { return control.x; }
+    public float get_y() { return control.y; }
+    public boolean is_attacking() { return control.is_attacking(); }
 
-    public int get_player_hitBox() {
-        return playerHitBox;
-    }
-
-    public float get_x() {
-        return control.x;
-    }
-
-    public float get_y() {
-        return control.y;
-    }
-
-    // Retorna se o usuário clicou em atacar
-    public boolean is_attacking() {
-        return control.is_attacking();
-    }
-
-    // Método para aplicar o dano
     public void take_damage(int damage) {
         this.playerLife -= damage;
-        // Evita que a vida fique negativa
         if (this.playerLife < 0) {
             this.playerLife = 0;
         }
@@ -147,12 +178,21 @@ public class Player {
 
     public void draw(SpriteBatch batch) {
         if (currentFrame != null) {
-            batch.draw(currentFrame, control.x, control.y, TILE_WIDTH, TILE_HEIGHT);
+            // Desenha respeitando a largura e altura reais do quadro atual
+            batch.draw(
+                currentFrame,
+                control.x,
+                control.y,
+                currentFrame.getRegionWidth(),
+                currentFrame.getRegionHeight()
+            );
         }
     }
 
     public void dispose() {
-        LeftSprite.dispose();
-        RightSprite.dispose();
+        if (LeftSprite != null) LeftSprite.dispose();
+        if (RightSprite != null) RightSprite.dispose();
+        if (flyRightSprite != null) flyRightSprite.dispose();
+        if (flyLeftSprite != null) flyLeftSprite.dispose();
     }
 }

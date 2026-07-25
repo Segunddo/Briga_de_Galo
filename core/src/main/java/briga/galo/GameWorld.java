@@ -15,18 +15,26 @@ public class GameWorld {
         backGround = new BackGround(0);
         players = new ArrayList<>();
 
-        // Player 1 (Comandos clássicos)
         Control controlP1 = new Control(50, 50);
         InputHandler inputP1 = new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE);
-        players.add(new Player(controlP1, inputP1));
+        Player p1 = new Player(controlP1, inputP1);
+        players.add(p1);
 
-        // Player 2 (Setas direcionais)
         Control controlP2 = new Control(1870, 50);
         InputHandler inputP2 = new InputHandler(Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.ENTER);
-        players.add(new Player(controlP2, inputP2));
+        Player p2 = new Player(controlP2, inputP2);
+        players.add(p2);
+
+        // INICIA UMA THREAD PARA CADA JOGADOR
+        for (Player player : players) {
+            Thread t = new Thread(player);
+            t.start();
+        }
     }
 
     public void update(float delta) {
+        // As Threads estão calculando a física em paralelo.
+        // O mundo agora só manda atualizar o visual (texturas/animação).
         for (Player player : players) {
             player.visual_refresh(delta);
         }
@@ -65,7 +73,20 @@ public class GameWorld {
     public void dispose() {
         backGround.dispose();
         for (Player player : players) {
+            // Parar a Thread antes de limpar a memória
+            player.stopThread();
             player.dispose();
         }
+    }
+    public boolean isGameOver() {
+        return players.get(0).get_player_life() <= 0 || players.get(1).get_player_life() <= 0;
+    }
+
+    public int getPlayer1Life() {
+        return players.get(0).get_player_life();
+    }
+
+    public int getPlayer2Life() {
+        return players.get(1).get_player_life();
     }
 }

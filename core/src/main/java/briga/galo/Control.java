@@ -29,9 +29,16 @@ public class Control {
     private boolean isHoldingRight = false;
     private boolean isHoldingLeft = false;
 
+    // Variaveis de controle para os ataques
+    private float attackTimer = 0f;
+    private final float ATTACK_DURATION = 0.25f; // Tempo que a investida dura
+    private final float DASH_SPEED = 1200f; // Velocidade horizontal do ataque
+    private final float AIR_DASH_SPEED_Y = 800f; // Velocidade que ele é arremessado para baixo
+    private boolean isAirAttacking = false;
+
     // Variáveis para saber para onde o galo está olhando quando parado
-    private boolean isHeadingLeft = false;
-    private boolean isHeadingRight = false;
+    public boolean isHeadingLeft = false;
+    public boolean isHeadingRight = false;
 
     // Construtor
     public Control(float startX, float startY) {
@@ -41,7 +48,21 @@ public class Control {
 
     // O Player injeta a intenção aqui, seja vinda do InputHandler (teclado local) ou da Rede (Servidor)
     public void set_inputs(boolean attack, boolean jump, boolean right, boolean left) {
-        this.isAttacking = attack;
+        // Só permite iniciar um ataque se já não estiver no meio de um
+        if (attack && !this.isAttacking) {
+            this.isAttacking = true;
+            this.attackTimer = ATTACK_DURATION;
+
+            // Se NÃO estiver no chão, é um ataque aéreo!
+            if (!this.isOnFloor) {
+                this.isAirAttacking = true;
+                // Aplica uma força negativa forte para ele descer com tudo (Mergulho)
+                this.velocidadeY = -AIR_DASH_SPEED_Y;
+            } else {
+                this.isAirAttacking = false;
+            }
+        }
+
         this.isHoldingJump = jump;
         this.isHoldingRight = right;
         this.isHoldingLeft = left;
@@ -49,9 +70,34 @@ public class Control {
 
     // Chama todos os cálculos matemáticos do frame
     public void update_logic(float delta) {
-        apply_horizontal_movement(delta);
-        handle_jump_action();
+        if (isAttacking) {
+            // Se estiver atacando, substitui o movimento normal pela investida
+            handle_dash_attack(delta);
+        } else {
+            // Se não estiver atacando, move e pula normalmente
+            apply_horizontal_movement(delta);
+            handle_jump_action();
+        }
+
+        // A física (gravidade e colisões com o chão) continua sendo aplicada em ambos os casos
         apply_physics(delta);
+    }
+
+    // Lida com o deslocamento forçado do ataque
+    private void handle_dash_attack(float delta) {
+        attackTimer -= delta;
+
+        // Descobre a direção baseada em para onde o galo estava olhando antes do ataque
+        float direction = isHeadingLeft ? -1f : 1f;
+
+        // Aplica a velocidade horizontal massiva (Investida)
+        x += DASH_SPEED * direction * delta;
+
+        // O ataque acaba se o tempo esgotar OU se for um ataque aéreo e o galo bater no chão
+        if (attackTimer <= 0 || (isAirAttacking && isOnFloor)) {
+            isAttacking = false;
+            isAirAttacking = false;
+        }
     }
 
     // Movimentação no Eixo X
@@ -105,11 +151,18 @@ public class Control {
     }
 
     // Retorna a animação que deve ser tocada na classe Player
-    // Retorna a animação que deve ser tocada na classe Player
     public Utils.Action get_visual_state() {
-        if (isAttacking) {
+
+        if (isAirAttacking){
+            if(isHeadingLeft){
+                return Utils.Action.FLY_ATTACK_LEFT;
+            } else {
+                return Utils.Action.FLY_ATTACK_RIGHT;
+            }
+        } else if (isAttacking) {
             return Utils.Action.ATTACK;
-        } else if (!isOnFloor) {
+        }
+        else if (!isOnFloor) {
             // Se não está no chão (seja subindo no pulo ou caindo), toca a animação de voo
             if (isHeadingLeft) {
                 return Utils.Action.FLY_LEFT;

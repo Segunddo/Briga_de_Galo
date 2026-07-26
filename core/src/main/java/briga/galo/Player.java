@@ -25,16 +25,21 @@ public class Player implements Runnable {
     private Texture RightSprite;
     private Texture flyRightSprite;
     private Texture flyLeftSprite;
+    private Texture attackLeftSprite;
+    private Texture attackRightSprite;
 
     private Animation<TextureRegion> walkRightAnimation;
     private Animation<TextureRegion> walkLeftAnimation;
     private Animation<TextureRegion> flyRightAnimation;
     private Animation<TextureRegion> flyLeftAnimation;
+    private Animation<TextureRegion> attackLeftAnimation;
+    private Animation<TextureRegion> attackRightAnimation;
 
     // imagens estaticas
     private TextureRegion imgIdle;
     private TextureRegion imgLeft;
     private TextureRegion imgRight;
+
     // Região atual que será desenhada
     private TextureRegion currentFrame;
 
@@ -58,16 +63,19 @@ public class Player implements Runnable {
         this.LeftSprite = new Texture("walking_left_sprite.png");
         this.flyRightSprite = new Texture("fly_right_sprite.png");
         this.flyLeftSprite = new Texture("fly_left_sprite.png");
+        this.attackLeftSprite = new Texture("attack_sprite_left.png");
+        this.attackRightSprite = new Texture("attack_sprite_right.png");
 
         // Corta os spritesheet nas dimensões corretas
         TextureRegion[][] tmpRight = TextureRegion.split(RightSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpLeft = TextureRegion.split(LeftSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpFlyRight = TextureRegion.split(flyRightSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpFlyLeft = TextureRegion.split(flyLeftSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpAttackLeft = TextureRegion.split(attackLeftSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpAttackRight = TextureRegion.split(attackRightSprite, TILE_WIDTH, TILE_HEIGHT);
 
         float frameDuration = 0.1f;
 
-        // Animação de Andar
         this.walkRightAnimation = new Animation<>(frameDuration, tmpRight[0]);
         this.walkRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
@@ -79,6 +87,12 @@ public class Player implements Runnable {
 
         this.flyLeftAnimation = new Animation<>(frameDuration, tmpFlyLeft[0]);
         this.flyLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        this.attackLeftAnimation = new Animation<>(frameDuration, tmpAttackLeft[0]);
+        this.attackLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        this.attackRightAnimation = new Animation<>(frameDuration, tmpAttackRight[0]);
+        this.attackRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
         // Poses estáticas
         this.imgIdle = tmpRight[0][0];
@@ -151,6 +165,19 @@ public class Player implements Runnable {
             case FLY_LEFT:
                 currentFrame = flyLeftAnimation.getKeyFrame(stateTime);
                 break;
+            case FLY_ATTACK_LEFT:
+                currentFrame = attackLeftAnimation.getKeyFrame(stateTime);
+                break;
+            case FLY_ATTACK_RIGHT:
+                currentFrame = attackRightAnimation.getKeyFrame(stateTime);
+                break;
+            case ATTACK:
+                if (control.isHeadingLeft){ // todo: mudar essa checagem para dentro do control
+                    currentFrame = attackLeftAnimation.getKeyFrame(stateTime);
+                } else {
+                    currentFrame = attackRightAnimation.getKeyFrame(stateTime);
+                }
+                break;
             case LEFT_HANDLE:
                 currentFrame = imgLeft;
                 break;
@@ -194,5 +221,7 @@ public class Player implements Runnable {
         if (RightSprite != null) RightSprite.dispose();
         if (flyRightSprite != null) flyRightSprite.dispose();
         if (flyLeftSprite != null) flyLeftSprite.dispose();
+        if (attackLeftSprite != null) attackLeftSprite.dispose();
+        if (attackRightSprite != null) attackRightSprite.dispose();
     }
 }

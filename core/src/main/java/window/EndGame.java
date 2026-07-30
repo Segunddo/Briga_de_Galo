@@ -1,4 +1,4 @@
-package briga.galo;
+package window;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;

@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import window.PlayerChanging;
+import window.EndGame;
+import window.Menu;
 
 public class Main extends ApplicationAdapter {
     private SpriteBatch batch;

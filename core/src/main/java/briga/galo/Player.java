@@ -7,14 +7,18 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Player implements Runnable {
 
-    //PROBLEMA: DO JEITO QUE AS THREADS FORAM CRIADAS
-    //GEROU PROBLEMA DE RACE CONDITION
-    //PORTANTO, VOU USAR MONITORES PARA RESOLVER.
-
-    //DO JEITO QUE ESTA AGORA, VARIAS THREADS ESTAO ACESSANDO AS POSIÇÕES SIMULTANEAMENTE
-    //ISSO PODE GERAR PROBLEMAS NA HORA DE CHECAR COLISOES
+    // a thread do player escreve x, y, isHeadingLeft e playerLife
+    // via control.update_logic() e take_damage().
+    // OUTRAS THREADS (a de renderizacao, e a thread do adversario quando checa
+    // colisao) leem esses mesmos valores atraves de get_x(), get_y(),
+    // is_attacking() e get_player_life().
 
     private volatile boolean running = true;
+
+    // Monitor que protege o estado compartilhado deste Player (posicao,
+    // direcao e vida). Cada instancia de Player tem o seu proprio lock,
+    // entao jogadores diferentes nao competem pelo mesmo monitor.
+    private final Object lock = new Object();
 
     private Control control;
     private InputHandler inputHandler;
@@ -44,12 +48,13 @@ public class Player implements Runnable {
     private TextureRegion currentFrame;
 
     // GUARDA A AÇÃO ATUAL PARA SABERMOS QUANDO MUDAR
+    // (só lida/escrita pela thread de renderização, dentro de visual_refresh/draw,
+    // por isso não precisa do monitor)
     private Utils.Action currentAction = Utils.Action.IDLE;
 
     // Variável para controlar o tempo da animação
     private float stateTime;
 
-    // Configurações do Sprite (Andar: 1200x300 -> 4 quadros de 300x300)
     private static final int TILE_WIDTH = 300;
     private static final int TILE_HEIGHT = 300;
 
@@ -113,7 +118,7 @@ public class Player implements Runnable {
             float threadDelta = (now - lastTime) / 1000000000f;
             lastTime = now;
 
-            // Lê os inputs do teclado
+            // Lê os inputs do teclado (só esta thread escreve/lê os inputs, sem risco)
             if (inputHandler != null) {
                 control.set_inputs(
                     inputHandler.isAttack(),
@@ -123,8 +128,13 @@ public class Player implements Runnable {
                 );
             }
 
-            // Atualiza a física na Thread
-            control.update_logic(threadDelta);
+            // Regiao critica: update_logic() é quem altera x, y e isHeadingLeft
+            // dentro de Control. Qualquer thread que leia esses valores (render,
+            // ou o adversário checando colisão) usa o MESMO monitor (lock),
+            // então nunca vê um estado "pela metade".
+            synchronized (lock) {
+                control.update_logic(threadDelta);
+            }
 
             // Pausa a thread por 16 milissegundos para rodar a aprox. 60 FPS
             // Isso impede que a Thread consuma 100% da CPU do computador
@@ -141,7 +151,15 @@ public class Player implements Runnable {
     }
 
     public void visual_refresh(float delta) {
-        Utils.Action newAction = control.get_visual_state();
+        Utils.Action newAction;
+        boolean headingLeft;
+
+        // Le o estado de Control de forma atômica, protegida
+        // pelo mesmo monitor usado em run().
+        synchronized (lock) {
+            newAction = control.get_visual_state();
+            headingLeft = control.isHeadingLeft;
+        }
 
         //Se a ação mudou, nós resetamos o relógio da animação!
         if (newAction != currentAction) {
@@ -172,7 +190,7 @@ public class Player implements Runnable {
                 currentFrame = attackRightAnimation.getKeyFrame(stateTime);
                 break;
             case ATTACK:
-                if (control.isHeadingLeft){ // todo: mudar essa checagem para dentro do control
+                if (headingLeft) {
                     currentFrame = attackLeftAnimation.getKeyFrame(stateTime);
                 } else {
                     currentFrame = attackRightAnimation.getKeyFrame(stateTime);
@@ -190,26 +208,59 @@ public class Player implements Runnable {
         }
     }
 
-    public int get_player_life() { return playerLife; }
-    public int get_player_hitBox() { return playerHitBox; }
-    public float get_x() { return control.x; }
-    public float get_y() { return control.y; }
-    public boolean is_attacking() { return control.is_attacking(); }
+    public int get_player_life() {
+        synchronized (lock) {
+            return playerLife;
+        }
+    }
+
+    public int get_player_hitBox() {
+        return playerHitBox;
+    }
+
+    public float get_x() {
+        synchronized (lock) {
+            return control.x;
+        }
+    }
+
+    public float get_y() {
+        synchronized (lock) {
+            return control.y;
+        }
+    }
+
+    public boolean is_attacking() {
+        synchronized (lock) {
+            return control.is_attacking();
+        }
+    }
 
     public void take_damage(int damage) {
-        this.playerLife -= damage;
-        if (this.playerLife < 0) {
-            this.playerLife = 0;
+        // atualização de física do jogador, precisa do monitor.
+        synchronized (lock) {
+            this.playerLife -= damage;
+            if (this.playerLife < 0) {
+                this.playerLife = 0;
+            }
         }
     }
 
     public void draw(SpriteBatch batch) {
         if (currentFrame != null) {
-            // Desenha respeitando a largura e altura reais do quadro atual
+            // Le x e y de uma vez só, dentro do monitor, para garantir que
+            // as duas coordenadas pertencem ao mesmo instante (evita
+            // desenhar com x novo e y antigo, por exemplo).
+            float x, y;
+            synchronized (lock) {
+                x = control.x;
+                y = control.y;
+            }
+
             batch.draw(
                 currentFrame,
-                control.x,
-                control.y,
+                x,
+                y,
                 currentFrame.getRegionWidth(),
                 currentFrame.getRegionHeight()
             );

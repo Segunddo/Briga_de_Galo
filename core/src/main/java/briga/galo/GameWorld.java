@@ -15,17 +15,17 @@ public class GameWorld {
     private final float width = 1920f;
     private final float height = 1080f;
 
-    public GameWorld() {
+    public GameWorld(String p1SkinId, String p2SkinId) {
         backGround = new BackGround(0);
         players = new ArrayList<>();
 
         // A instanciação agora é direta e muito mais limpa!
         InputHandler inputP1 = new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE, Input.Keys.S);
-        Player p1 = new Player(0, 50, inputP1);
+        Player p1 = new Player(0, 50, inputP1, p1SkinId);
         players.add(p1);
 
         InputHandler inputP2 = new InputHandler(Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.ENTER, Input.Keys.DOWN);
-        Player p2 = new Player(1870, 50, inputP2);
+        Player p2 = new Player(1870, 50, inputP2, p2SkinId);
         players.add(p2);
 
         // INICIA UMA THREAD PARA CADA JOGADOR
@@ -148,7 +148,7 @@ public class GameWorld {
                     p1Model.triggerRepel(pushP1Left);
                 } else {
                     // P2 não defendeu, toma dano!
-                    p2Model.takeDamage(10);
+                    p2Model.takeDamage(1);
                 }
             }
 
@@ -160,7 +160,7 @@ public class GameWorld {
                     p2Model.triggerRepel(pushP2Left);
                 } else {
                     // P1 não defendeu, toma dano!
-                    p1Model.takeDamage(10);
+                    p1Model.takeDamage(1);
                 }
             }
         }

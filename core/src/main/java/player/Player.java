@@ -11,9 +11,9 @@ public class Player implements Runnable {
     private PlayerRenderer renderer;
     private InputHandler inputHandler;
 
-    public Player(float startX, float startY, InputHandler inputHandler) {
+    public Player(float startX, float startY, InputHandler inputHandler, String skinId) {
         this.model = new PlayerModel(startX, startY);
-        this.renderer = new PlayerRenderer();
+        this.renderer = new PlayerRenderer(skinId);
         this.inputHandler = inputHandler;
     }
 
@@ -66,6 +66,6 @@ public class Player implements Runnable {
     }
 
     public void dispose() {
-        renderer.dispose();
+        SkinManager.getInstance().disposeAll();
     }
 }

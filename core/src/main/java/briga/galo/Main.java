@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import window.CharacterSelect;
+import window.JoinMatch;
 import window.PlayerChanging;
 import window.EndGame;
 import window.Menu;
@@ -20,7 +22,9 @@ public class Main extends ApplicationAdapter {
     // Nossas instâncias de telas e mundo
     private GameWorld world;
     private Menu menu;
+    private JoinMatch joinMatch;
     private PlayerChanging playerChanging;
+    private CharacterSelect characterSelect;
     private EndGame endGame;
 
     // A Máquina de Estados
@@ -38,7 +42,9 @@ public class Main extends ApplicationAdapter {
         // Inicializa o estado inicial
         currentState = Utils.StateGame.MENU;
         menu = new Menu();
+        joinMatch = new JoinMatch();
         playerChanging = new PlayerChanging();
+        characterSelect = new CharacterSelect();
         endGame = new EndGame();
     }
 
@@ -53,17 +59,37 @@ public class Main extends ApplicationAdapter {
         // MÁQUINA DE ESTADOS
         switch (currentState) {
             case MENU:
-                // Atualiza a lógica do menu (efeito de piscar)
+                // Atualiza a lógica do menu (navegação entre opções e efeito de piscar)
                 menu.update(delta);
 
                 // Desenha o menu na tela
                 menu.draw(batch);
 
-                // Transição de Estado
+                // Transição de Estado, de acordo com a opção selecionada
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                    if (menu.isCreateMatchSelected()) {
+                        currentState = Utils.StateGame.PLAYER_CHANGING;
+                    } else if (menu.isJoinMatchSelected()) {
+                        currentState = Utils.StateGame.JOIN_MATCH;
+                    }
+                } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                    Gdx.app.exit(); // Fecha o jogo
+                }
+                break;
+
+            case JOIN_MATCH:
+                // Atualiza a navegação da lista de partidas
+                joinMatch.update(delta);
+
+                // Desenha a lista de partidas disponíveis
+                joinMatch.draw(batch, width, height);
+
+                // Aperte ENTER para "entrar" na partida selecionada
+                // (por enquanto só avança para a sala de espera, sem lógica de conexão)
                 if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                     currentState = Utils.StateGame.PLAYER_CHANGING;
                 } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                    Gdx.app.exit(); // Fecha o jogo
+                    currentState = Utils.StateGame.MENU;
                 }
                 break;
 
@@ -74,13 +100,29 @@ public class Main extends ApplicationAdapter {
                 // Desenha a sala de espera
                 playerChanging.draw(batch, width, height);
 
-                // Provisório: Aperte ENTER para simular que o P2 conectou e o jogo começou
+                // Provisório: Aperte ENTER para simular que o P2 conectou
+                // Assim que os dois estiverem "prontos", vai pra seleção de personagem
                 if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-                    // Quando for jogar de verdade, recriamos o mundo para ter a vida cheia
-                    if (world != null) world.dispose();
-                    world = new GameWorld();
+                    characterSelect.reset();
+                    currentState = Utils.StateGame.CHARACTER_SELECT;
+                }
+                break;
 
+            case CHARACTER_SELECT:
+                // Cada jogador escolhe e confirma seu personagem
+                characterSelect.update(delta);
+
+                // Desenha a tela de seleção
+                characterSelect.draw(batch, width, height);
+
+                // Assim que os dois jogadores confirmarem, a partida começa
+                if (characterSelect.isBothReady()) {
+                    if (world != null) world.dispose();
+                    world = new GameWorld(characterSelect.getPlayer1SkinId(), characterSelect.getPlayer2SkinId());
                     currentState = Utils.StateGame.MATCH;
+                } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                    // Cancela e volta pro menu
+                    currentState = Utils.StateGame.MENU;
                 }
                 break;
 
@@ -135,7 +177,9 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         if (world != null) world.dispose();
         if (menu != null) menu.dispose();
+        if (joinMatch != null) joinMatch.dispose();
         if (playerChanging != null) playerChanging.dispose();
+        if (characterSelect != null) characterSelect.dispose();
         if (endGame != null) endGame.dispose();
     }
 }

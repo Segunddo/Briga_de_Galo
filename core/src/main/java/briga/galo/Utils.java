@@ -17,7 +17,9 @@ public class Utils {
     }
     public enum StateGame{
         MENU,
+        JOIN_MATCH,
         PLAYER_CHANGING,
+        CHARACTER_SELECT,
         MATCH,
         ENDGAME
     }

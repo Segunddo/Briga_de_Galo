@@ -1,77 +1,29 @@
 package player;
 
 import briga.galo.Utils;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class PlayerRenderer {
-    private static final int TILE_WIDTH = 300;
-    private static final int TILE_HEIGHT = 300;
 
-    // Todas as texturas e animações ficam aqui
-    private Texture rightSprite, leftSprite, flyRightSprite, flyLeftSprite, attackLeftSprite, attackRightSprite, defendLeftSprite, defendRightSprite;
-    private Animation<TextureRegion> walkRight, walkLeft, flyRight, flyLeft, attackLeft, attackRight, defendLeft, defendRight;
-    private TextureRegion imgIdle, imgLeft, imgRight, currentFrame;
+    private PlayerSkin skin;
+    private TextureRegion currentFrame;
 
     private Utils.Action currentAction = Utils.Action.IDLE;
     private float stateTime = 0f;
 
-    public PlayerRenderer() {
-        // 1. CARREGA AS TEXTURAS (Arquivos PNG)
-        this.rightSprite = new Texture("walking_right_sprite.png");
-        this.leftSprite = new Texture("walking_left_sprite.png");
-        this.flyRightSprite = new Texture("fly_right_sprite.png");
-        this.flyLeftSprite = new Texture("fly_left_sprite.png");
-        this.attackLeftSprite = new Texture("attack_sprite_left.png");
-        this.attackRightSprite = new Texture("attack_sprite_right.png");
-        this.defendLeftSprite = new Texture("defend_left_sprite.png");
-        this.defendRightSprite = new Texture("defend_right_sprite.png");
+    public PlayerRenderer(String skinId) {
+        this.skin = SkinManager.getInstance().get(skinId);
+        this.currentFrame = skin.getIdleFrame();
+    }
 
-        // 2. CORTA OS SPRITESHEETS
-        TextureRegion[][] tmpRight = TextureRegion.split(rightSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpLeft = TextureRegion.split(leftSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpFlyRight = TextureRegion.split(flyRightSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpFlyLeft = TextureRegion.split(flyLeftSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpAttackLeft = TextureRegion.split(attackLeftSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpAttackRight = TextureRegion.split(attackRightSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpDefendLeft = TextureRegion.split(defendLeftSprite, TILE_WIDTH, TILE_HEIGHT);
-        TextureRegion[][] tmpDefendRight = TextureRegion.split(defendRightSprite, TILE_WIDTH, TILE_HEIGHT);
+    // Troca a skin do personagem em tempo de execução
+    public void setSkin(String skinId) {
+        this.skin = SkinManager.getInstance().get(skinId);
+    }
 
-        float frameDuration = 0.1f;
-
-        // 3. CRIA AS ANIMAÇÕES
-        this.walkRight = new Animation<>(frameDuration, tmpRight[0]);
-        this.walkRight.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.walkLeft = new Animation<>(frameDuration, tmpLeft[0]);
-        this.walkLeft.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.flyRight = new Animation<>(frameDuration, tmpFlyRight[0]);
-        this.flyRight.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.flyLeft = new Animation<>(frameDuration, tmpFlyLeft[0]);
-        this.flyLeft.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.attackLeft = new Animation<>(frameDuration, tmpAttackLeft[0]);
-        this.attackLeft.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.attackRight = new Animation<>(frameDuration, tmpAttackRight[0]);
-        this.attackRight.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.defendLeft = new Animation<>(frameDuration, tmpDefendLeft[0]);
-        this.defendLeft.setPlayMode(Animation.PlayMode.LOOP);
-
-        this.defendRight = new Animation<>(frameDuration, tmpDefendRight[0]);
-        this.defendRight.setPlayMode(Animation.PlayMode.LOOP);
-
-        // 4. POSES ESTÁTICAS (Parado)
-        this.imgIdle = tmpRight[0][0];
-        this.imgLeft = tmpLeft[0][0];
-        this.imgRight = tmpRight[0][0];
-
-        this.currentFrame = imgIdle;
+    public String getSkinId() {
+        return skin.getSkinId();
     }
 
     // Atualiza o tempo da animação e escolhe o frame correto baseado no Model
@@ -86,47 +38,45 @@ public class PlayerRenderer {
             stateTime += delta;
         }
 
-        // 5. SELECIONA O FRAME CORRETO PARA DESENHAR
+        // Seleciona o frame correto para desenhar, sempre a partir da skin atual
         switch (currentAction) {
             case WALK_RIGHT:
-                currentFrame = walkRight.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.WALK_RIGHT).getKeyFrame(stateTime);
                 break;
             case WALK_LEFT:
-                currentFrame = walkLeft.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.WALK_LEFT).getKeyFrame(stateTime);
                 break;
             case FLY_RIGHT:
-                currentFrame = flyRight.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.FLY_RIGHT).getKeyFrame(stateTime);
                 break;
             case FLY_LEFT:
-                currentFrame = flyLeft.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.FLY_LEFT).getKeyFrame(stateTime);
                 break;
             case FLY_ATTACK_LEFT:
-                currentFrame = attackLeft.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.ATTACK_LEFT).getKeyFrame(stateTime);
                 break;
             case FLY_ATTACK_RIGHT:
-                currentFrame = attackRight.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.ATTACK_RIGHT).getKeyFrame(stateTime);
                 break;
             case ATTACK:
-                if (headingLeft) {
-                    currentFrame = attackLeft.getKeyFrame(stateTime);
-                } else {
-                    currentFrame = attackRight.getKeyFrame(stateTime);
-                }
+                currentFrame = headingLeft
+                    ? skin.getAnimation(SpriteType.ATTACK_LEFT).getKeyFrame(stateTime)
+                    : skin.getAnimation(SpriteType.ATTACK_RIGHT).getKeyFrame(stateTime);
                 break;
             case DEFEND_LEFT:
-                currentFrame = defendLeft.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.DEFEND_LEFT).getKeyFrame(stateTime);
                 break;
             case DEFEND_RIGHT:
-                currentFrame = defendRight.getKeyFrame(stateTime);
+                currentFrame = skin.getAnimation(SpriteType.DEFEND_RIGHT).getKeyFrame(stateTime);
                 break;
             case LEFT_HANDLE:
-                currentFrame = imgLeft;
+                currentFrame = skin.getLeftFrame();
                 break;
             case RIGHT_HANDLE:
-                currentFrame = imgRight;
+                currentFrame = skin.getRightFrame();
                 break;
             default:
-                currentFrame = imgIdle;
+                currentFrame = skin.getIdleFrame();
                 break;
         }
     }
@@ -142,17 +92,5 @@ public class PlayerRenderer {
                 currentFrame.getRegionHeight()
             );
         }
-    }
-
-    // Limpa a memória das texturas quando o jogo fecha
-    public void dispose() {
-        if (leftSprite != null) leftSprite.dispose();
-        if (rightSprite != null) rightSprite.dispose();
-        if (flyRightSprite != null) flyRightSprite.dispose();
-        if (flyLeftSprite != null) flyLeftSprite.dispose();
-        if (attackLeftSprite != null) attackLeftSprite.dispose();
-        if (attackRightSprite != null) attackRightSprite.dispose();
-        if (defendLeftSprite != null) defendLeftSprite.dispose();
-        if (defendRightSprite != null) defendRightSprite.dispose();
     }
 }

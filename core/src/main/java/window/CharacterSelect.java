@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 public class CharacterSelect {
 
     private static final String[] AVAILABLE_SKINS = {
-        "default", "laranja", "gledson"
+        "default", "armadura", "gledson"
     };
 
     private Texture p1Panel;

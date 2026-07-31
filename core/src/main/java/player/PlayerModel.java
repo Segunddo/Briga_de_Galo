@@ -150,6 +150,12 @@ public class PlayerModel {
         }
     }
 
+    public void setX(float newX) {
+        synchronized (lock) {
+            this.x = newX;
+        }
+    }
+
     // --- LÓGICA INTERNA DE FÍSICA ---
     private void handleDashAttack(float delta) {
         attackTimer -= delta;

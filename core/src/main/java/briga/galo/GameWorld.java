@@ -21,7 +21,7 @@ public class GameWorld {
 
         // A instanciação agora é direta e muito mais limpa!
         InputHandler inputP1 = new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE, Input.Keys.S);
-        Player p1 = new Player(50, 50, inputP1);
+        Player p1 = new Player(0, 50, inputP1);
         players.add(p1);
 
         InputHandler inputP2 = new InputHandler(Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.ENTER, Input.Keys.DOWN);
@@ -42,6 +42,8 @@ public class GameWorld {
             player.visualRefresh(delta); // Nome adaptado para o camelCase usado na refatoração
         }
         checkCombat();
+        checkBodyCollision();
+        checkMapLimit();
     }
 
     public void draw(SpriteBatch batch) {
@@ -76,6 +78,61 @@ public class GameWorld {
             (p1_x + p1_size > p2_x) &&
             (p1_y < p2_y + p2_size) &&
             (p1_y + p1_size > p2_y);
+    }
+
+    private void checkBodyCollision() {
+        PlayerModel p1Model = players.get(0).getModel();
+        PlayerModel p2Model = players.get(1).getModel();
+
+        float p1_x = p1Model.getX();
+        float p1_y = p1Model.getY();
+        float hitBox = p1Model.getHitBox();
+
+        float p2_x = p2Model.getX();
+        float p2_y = p2Model.getY();
+
+        // Checa se eles estão em alturas diferentes (Permite pular por cima)
+        // Se a base de um estiver acima do topo do outro, eles não se empurram
+        if (p1_y >= p2_y + hitBox || p2_y >= p1_y + hitBox) {
+            return; // Estão em alturas diferentes, ignora a colisão de corpos
+        }
+
+        // Checa se estão colidindo horizontalmente
+        if (p1_x < p2_x + hitBox && p1_x + hitBox > p2_x) {
+
+            // Descobre quem está na esquerda e quem está na direita
+            PlayerModel leftPlayer = (p1_x < p2_x) ? p1Model : p2Model;
+            PlayerModel rightPlayer = (p1_x < p2_x) ? p2Model : p1Model;
+
+            // Calcula a "invasão" (Quantos pixels um entrou dentro do outro)
+            float overlap = (leftPlayer.getX() + hitBox) - rightPlayer.getX();
+
+            if (overlap > 0) {
+                // Empurra cada um metade da distância de invasão para trás
+                leftPlayer.setX(leftPlayer.getX() - (overlap / 2f));
+                rightPlayer.setX(rightPlayer.getX() + (overlap / 2f));
+            }
+        }
+    }
+
+    private void checkMapLimit() {
+        // Pegamos as referências dos modelos lógicos para checar colisão
+        PlayerModel p1Model = players.get(0).getModel();
+        PlayerModel p2Model = players.get(1).getModel();
+
+        // Limites do Jogador 1
+        if (p1Model.getX() < 0) {
+            p1Model.setX(0);
+        } else if (p1Model.getX() + p1Model.getHitBox() > width) {
+            p1Model.setX(width - p1Model.getHitBox());
+        }
+
+        // Limites do Jogador 2
+        if (p2Model.getX() < 0) {
+            p2Model.setX(0);
+        } else if (p2Model.getX() + p2Model.getHitBox() > width) {
+            p2Model.setX(width - p2Model.getHitBox());
+        }
     }
 
     private void checkCombat() {

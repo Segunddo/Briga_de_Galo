@@ -230,6 +230,7 @@ public class PlayerModel {
     // Define qual estado visual a Renderer deve tocar
     public Utils.Action getCurrentAction() {
         synchronized (lock) {
+            if (isDefending) return isHeadingLeft ? Utils.Action.DEFEND_LEFT : Utils.Action.DEFEND_RIGHT;
             if (isAirAttacking) return isHeadingLeft ? Utils.Action.FLY_ATTACK_LEFT : Utils.Action.FLY_ATTACK_RIGHT;
             if (isAttacking) return Utils.Action.ATTACK;
             if (!isOnFloor) return isHeadingLeft ? Utils.Action.FLY_LEFT : Utils.Action.FLY_RIGHT;

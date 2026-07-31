@@ -11,6 +11,8 @@ public class Utils {
         FLY_ATTACK_RIGHT,
         LEFT_HANDLE,
         RIGHT_HANDLE,
+        DEFEND_LEFT,
+        DEFEND_RIGHT,
         IDLE
     }
     public enum StateGame{

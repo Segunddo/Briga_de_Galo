@@ -11,8 +11,8 @@ public class PlayerRenderer {
     private static final int TILE_HEIGHT = 300;
 
     // Todas as texturas e animações ficam aqui
-    private Texture rightSprite, leftSprite, flyRightSprite, flyLeftSprite, attackLeftSprite, attackRightSprite;
-    private Animation<TextureRegion> walkRight, walkLeft, flyRight, flyLeft, attackLeft, attackRight;
+    private Texture rightSprite, leftSprite, flyRightSprite, flyLeftSprite, attackLeftSprite, attackRightSprite, defendLeftSprite, defendRightSprite;
+    private Animation<TextureRegion> walkRight, walkLeft, flyRight, flyLeft, attackLeft, attackRight, defendLeft, defendRight;
     private TextureRegion imgIdle, imgLeft, imgRight, currentFrame;
 
     private Utils.Action currentAction = Utils.Action.IDLE;
@@ -26,6 +26,8 @@ public class PlayerRenderer {
         this.flyLeftSprite = new Texture("fly_left_sprite.png");
         this.attackLeftSprite = new Texture("attack_sprite_left.png");
         this.attackRightSprite = new Texture("attack_sprite_right.png");
+        this.defendLeftSprite = new Texture("defend_left_sprite.png");
+        this.defendRightSprite = new Texture("defend_right_sprite.png");
 
         // 2. CORTA OS SPRITESHEETS
         TextureRegion[][] tmpRight = TextureRegion.split(rightSprite, TILE_WIDTH, TILE_HEIGHT);
@@ -34,6 +36,8 @@ public class PlayerRenderer {
         TextureRegion[][] tmpFlyLeft = TextureRegion.split(flyLeftSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpAttackLeft = TextureRegion.split(attackLeftSprite, TILE_WIDTH, TILE_HEIGHT);
         TextureRegion[][] tmpAttackRight = TextureRegion.split(attackRightSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpDefendLeft = TextureRegion.split(defendLeftSprite, TILE_WIDTH, TILE_HEIGHT);
+        TextureRegion[][] tmpDefendRight = TextureRegion.split(defendRightSprite, TILE_WIDTH, TILE_HEIGHT);
 
         float frameDuration = 0.1f;
 
@@ -55,6 +59,12 @@ public class PlayerRenderer {
 
         this.attackRight = new Animation<>(frameDuration, tmpAttackRight[0]);
         this.attackRight.setPlayMode(Animation.PlayMode.LOOP);
+
+        this.defendLeft = new Animation<>(frameDuration, tmpDefendLeft[0]);
+        this.defendLeft.setPlayMode(Animation.PlayMode.LOOP);
+
+        this.defendRight = new Animation<>(frameDuration, tmpDefendRight[0]);
+        this.defendRight.setPlayMode(Animation.PlayMode.LOOP);
 
         // 4. POSES ESTÁTICAS (Parado)
         this.imgIdle = tmpRight[0][0];
@@ -103,6 +113,12 @@ public class PlayerRenderer {
                     currentFrame = attackRight.getKeyFrame(stateTime);
                 }
                 break;
+            case DEFEND_LEFT:
+                currentFrame = defendLeft.getKeyFrame(stateTime);
+                break;
+            case DEFEND_RIGHT:
+                currentFrame = defendRight.getKeyFrame(stateTime);
+                break;
             case LEFT_HANDLE:
                 currentFrame = imgLeft;
                 break;
@@ -136,5 +152,7 @@ public class PlayerRenderer {
         if (flyLeftSprite != null) flyLeftSprite.dispose();
         if (attackLeftSprite != null) attackLeftSprite.dispose();
         if (attackRightSprite != null) attackRightSprite.dispose();
+        if (defendLeftSprite != null) defendLeftSprite.dispose();
+        if (defendRightSprite != null) defendRightSprite.dispose();
     }
 }

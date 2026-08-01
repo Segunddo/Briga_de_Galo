@@ -37,6 +37,12 @@ public class GameWorld {
 
     public void update(float delta) {
         // As Threads estão calculando a física em paralelo.
+        // Primeiro capturamos os inputs "de um frame só" (ex: ataque) aqui,
+        // na thread principal, onde eles são confiáveis (ver InputHandler.poll()).
+        for (Player player : players) {
+            player.pollInput();
+        }
+
         // O mundo agora só manda atualizar o visual (texturas/animação).
         for (Player player : players) {
             player.visualRefresh(delta); // Nome adaptado para o camelCase usado na refatoração

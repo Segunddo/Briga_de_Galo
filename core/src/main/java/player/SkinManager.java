@@ -13,21 +13,27 @@ public class SkinManager {
     private final Map<String, PlayerSkin> loadedSkins = new HashMap<>();
     private final Map<String, String> customPaths = new HashMap<>();
 
-    private SkinManager() {
-    }
+    private SkinManager() {}
 
-    // caso a skin não siga a convenção "skins/<id>/". Ex: a skin "default",
-    // cujos arquivos hoje estão soltos na raiz dos assets:
-    //   SkinManager.getInstance().registerSkinPath("default", "");
     public void registerSkinPath(String skinId, String basePath) {
         customPaths.put(skinId, basePath);
     }
 
     public PlayerSkin get(String skinId) {
-        return loadedSkins.computeIfAbsent(skinId, id -> {
-            String basePath = customPaths.get(id);
-            return basePath != null ? new PlayerSkin(id, basePath) : new PlayerSkin(id);
-        });
+        if (loadedSkins.containsKey(skinId)) {
+            return loadedSkins.get(skinId);
+        }
+
+        String basePath = customPaths.get(skinId);
+        PlayerSkin skin;
+        if (basePath != null) {
+            skin = new PlayerSkin(skinId, basePath);
+        } else {
+            skin = new PlayerSkin(skinId);
+        }
+
+        loadedSkins.put(skinId, skin);
+        return skin;
     }
 
     public boolean isLoaded(String skinId) {

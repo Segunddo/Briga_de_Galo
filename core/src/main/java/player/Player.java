@@ -28,7 +28,7 @@ public class Player implements Runnable {
 
             if (inputHandler != null) {
                 model.setInputs(
-                    inputHandler.isAttack(),
+                    inputHandler.consumeAttack(),
                     inputHandler.isJump(),
                     inputHandler.isRight(),
                     inputHandler.isLeft(),
@@ -47,12 +47,18 @@ public class Player implements Runnable {
         }
     }
 
-    // Chamado na thread principal de renderização do LibGDX
+    // Chamado na thread principal de renderização do LibGDX, uma vez por
+    // frame, ANTES da thread de física consumir o input (ver InputHandler.poll()).
+    public void pollInput() {
+        if (inputHandler != null) {
+            inputHandler.poll();
+        }
+    }
+
     public void visualRefresh(float delta) {
         renderer.update(delta, model);
     }
 
-    // Chamado na thread principal de renderização do LibGDX
     public void draw(SpriteBatch batch) {
         renderer.draw(batch, model);
     }

@@ -18,12 +18,14 @@ public class Utils {
     public enum StateGame{
         MENU,
         PLAYER_CHANGING,
+        WAITING,
         MATCH,
         ENDGAME
     }
 
     public enum CommandsGame{
         CREATE_ROOM,
-        ENTER_ROOM
+        ENTER_ROOM,
+        CANCEL_ROOM
     }
 }

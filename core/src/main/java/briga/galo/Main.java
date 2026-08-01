@@ -1,5 +1,7 @@
 package briga.galo;
 
+import audio.AudioManager;
+import audio.MusicType;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -119,6 +121,7 @@ public class Main extends ApplicationAdapter {
                 if (characterSelect.isBothReady()) {
                     if (world != null) world.dispose();
                     world = new GameWorld(characterSelect.getPlayer1SkinId(), characterSelect.getPlayer2SkinId());
+                    AudioManager.getInstance().playMusic(MusicType.BATTLE_THEME);
                     currentState = Utils.StateGame.MATCH;
                 } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                     // Cancela e volta pro menu
@@ -181,5 +184,6 @@ public class Main extends ApplicationAdapter {
         if (playerChanging != null) playerChanging.dispose();
         if (characterSelect != null) characterSelect.dispose();
         if (endGame != null) endGame.dispose();
+        AudioManager.getInstance().dispose();
     }
 }

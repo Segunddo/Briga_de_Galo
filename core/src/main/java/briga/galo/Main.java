@@ -152,11 +152,12 @@ public class Main extends ApplicationAdapter {
                 endGame.draw(batch, width, height);
 
                 // Se apertar ENTER, destrói o mundo atual e volta pro menu
-                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
                     if (world != null) {
                         world.dispose();
                         world = null;
                     }
+                    AudioManager.getInstance().stopMusic();
                     currentState = Utils.StateGame.MENU;
                 }
                 break;

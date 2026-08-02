@@ -52,16 +52,16 @@ public class PlayerChanging {
         batch.draw(p1Panel, margin, margin * 2, panelWidth, panelHeight);
         batch.draw(p2Panel, (screenWidth / 2f) + (margin / 2f), margin * 2, panelWidth, panelHeight);
 
-        titleFont.draw(batch, "SALA DE ESPERA", screenWidth / 2f - 250, screenHeight - 40);
+        titleFont.draw(batch, "SALA DE ESPERA ONLINE", screenWidth / 2f - 300, screenHeight - 40);
 
         font.setColor(Color.CYAN);
-        font.draw(batch, "JOGADOR 1", margin + 50, screenHeight - 150);
+        font.draw(batch, "VOCÊ", margin + 50, screenHeight - 150);
         font.setColor(Color.GREEN);
         font.draw(batch, "Status: PRONTO", margin + 50, screenHeight - 250);
 
         float p2TextX = (screenWidth / 2f) + (margin / 2f) + 50;
         font.setColor(Color.CORAL);
-        font.draw(batch, "JOGADOR 2", p2TextX, screenHeight - 150);
+        font.draw(batch, "ADVERSÁRIO", p2TextX, screenHeight - 150);
 
         font.setColor(Color.YELLOW);
         String waitingText = "Status: Aguardando Conexao";
@@ -71,7 +71,7 @@ public class PlayerChanging {
         font.draw(batch, waitingText, p2TextX, screenHeight - 250);
 
         font.setColor(Color.WHITE);
-        font.draw(batch, "[ ENTER ] Simular Entrada do P2 e Iniciar", screenWidth / 2f - 350, margin + 40);
+        font.draw(batch, "[ ESC ] Cancelar Busca", screenWidth / 2f - 180, margin + 40);
     }
 
     public void dispose() {

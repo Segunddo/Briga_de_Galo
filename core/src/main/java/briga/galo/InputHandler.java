@@ -1,49 +1,78 @@
 package briga.galo;
 
+import briga.galo.network.ClientDevice;
 import com.badlogic.gdx.Gdx;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InputHandler {
     private int keyLeft, keyRight, keyJump, keyAttack, keyDefense;
-
-    // isKeyJustPressed só é "true" durante o frame exato em que a tecla foi
-    // apertada - a flag é reiniciada a cada frame pela thread principal.
-    // Como a thread de física do Player lê os inputs fora de sincronia com
-    // o loop de renderização, um poll direto ali perde o toque na maioria
-    // das vezes. Por isso: capturamos o toque aqui em poll() (chamado pela
-    // thread principal, uma vez por frame) e guardamos como pendente até a
-    // thread do jogador consumir com consumeAttack().
-
     private final AtomicBoolean attackPending = new AtomicBoolean(false);
 
+    // Variáveis para Rede
+    private ClientDevice client;
+    private boolean isLocal;
+    private Utils.Action lastRemoteAction = Utils.Action.IDLE;
+
+    // Construtor para o Jogador LOCAL (teclado físico)
     public InputHandler(int keyLeft, int keyRight, int keyJump, int keyAttack, int keyDefense) {
         this.keyLeft = keyLeft;
         this.keyRight = keyRight;
         this.keyJump = keyJump;
         this.keyAttack = keyAttack;
         this.keyDefense = keyDefense;
+        this.isLocal = true;
     }
 
-    // IMPORTANTE: chame isso uma vez por frame, sempre na thread principal
-    // (a mesma que roda o render/poll de eventos do LibGDX). Em GameWorld,
-    // isso é feito em update(), antes de visualRefresh de cada jogador.
+    // Construtor para o Jogador REMOTO (teclado simulado via rede)
+    public InputHandler(ClientDevice client) {
+        this.client = client;
+        this.isLocal = false;
+    }
+
     public void poll() {
-        if (Gdx.input.isKeyJustPressed(keyAttack)) {
-            attackPending.set(true);
+        if (isLocal) {
+            // Se sou eu, leio o teclado real
+            if (Gdx.input.isKeyJustPressed(keyAttack)) {
+                attackPending.set(true);
+            }
+        } else {
+            // O jogador remoto atualiza sua intenção de ataque baseada na última ação que o servidor mandou
+            Utils.Action remoteAction = client.getAcaoOponente();
+
+            boolean isAttackingNow = remoteAction.name().contains("ATTACK");
+            boolean wasAttackingBefore = lastRemoteAction.name().contains("ATTACK");
+
+            // Dispara o trigger de ataque apenas na transição para a ação de ataque
+            if (isAttackingNow && !wasAttackingBefore) {
+                attackPending.set(true);
+            }
+
+            lastRemoteAction = remoteAction;
         }
     }
 
-    public boolean isLeft() { return Gdx.input.isKeyPressed(keyLeft); }
-    public boolean isRight() { return Gdx.input.isKeyPressed(keyRight); }
-    public boolean isJump() { return Gdx.input.isKeyPressed(keyJump); }
-    public boolean isDefense() { return Gdx.input.isKeyPressed(keyDefense); }
+    public boolean isLeft() {
+        if (isLocal) return Gdx.input.isKeyPressed(keyLeft);
+        // Só anda se o servidor mandar a string WALK_LEFT ou FLY_LEFT
+        return lastRemoteAction == Utils.Action.WALK_LEFT || lastRemoteAction == Utils.Action.FLY_LEFT;
+    }
 
-    // Consome o toque de ataque pendente (chamado pela thread de física do Player).
-    // Retorna true no máximo uma vez por toque, mesmo que várias iterações
-    // da thread de física aconteçam entre um frame e outro.
+    public boolean isRight() {
+        if (isLocal) return Gdx.input.isKeyPressed(keyRight);
+        return lastRemoteAction == Utils.Action.WALK_RIGHT || lastRemoteAction == Utils.Action.FLY_RIGHT;
+    }
+
+    public boolean isJump() {
+        if (isLocal) return Gdx.input.isKeyPressed(keyJump);
+        return lastRemoteAction.name().contains("FLY");
+    }
+
+    public boolean isDefense() {
+        if (isLocal) return Gdx.input.isKeyPressed(keyDefense);
+        return lastRemoteAction.name().contains("DEFEND");
+    }
+
     public boolean consumeAttack() {
-
         return attackPending.compareAndSet(true, false);
     }
 }

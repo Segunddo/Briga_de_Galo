@@ -5,7 +5,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import player.Player;
 import player.PlayerModel;
 import window.BackGround;
+import briga.galo.network.ClientDevice;
 
+import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,20 +17,45 @@ public class GameWorld {
     private final float width = 1920f;
     private final float height = 1080f;
 
-    public GameWorld(String p1SkinId, String p2SkinId) {
+    public GameWorld(ClientDevice client, String p1SkinId, String p2SkinId) {
         backGround = new BackGround(0);
         players = new ArrayList<>();
 
-        // A instanciação agora é direta e muito mais limpa!
-        InputHandler inputP1 = new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE, Input.Keys.S);
+        int myId = client.getMeuPlayerId();
+
+        // JOGADOR 1
+        InputHandler inputP1 = (myId == 1)
+            ? new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE, Input.Keys.S)
+            : new InputHandler(client);
+
         Player p1 = new Player(0, 50, inputP1, p1SkinId);
+        if (myId == 1) {
+            p1.setActionListener(new Consumer<Utils.Action>() {
+                @Override
+                public void accept(Utils.Action acao) {
+                    client.enviarAcao(acao);
+                }
+            });
+        }
         players.add(p1);
 
-        InputHandler inputP2 = new InputHandler(Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.ENTER, Input.Keys.DOWN);
+        //JOGADOR 2
+        InputHandler inputP2 = (myId == 2)
+            ? new InputHandler(Input.Keys.A, Input.Keys.D, Input.Keys.W, Input.Keys.SPACE, Input.Keys.S)
+            : new InputHandler(client);
+
         Player p2 = new Player(1870, 50, inputP2, p2SkinId);
+        if (myId == 2) {
+            p2.setActionListener(new Consumer<Utils.Action>() {
+                @Override
+                public void accept(Utils.Action acao) {
+                    client.enviarAcao(acao);
+                }
+            });
+        }
         players.add(p2);
 
-        // INICIA UMA THREAD PARA CADA JOGADOR
+        // Inicia as threads
         for (Player player : players) {
             Thread t = new Thread(player);
             t.start();
@@ -36,17 +63,13 @@ public class GameWorld {
     }
 
     public void update(float delta) {
-        // As Threads estão calculando a física em paralelo.
-        // Primeiro capturamos os inputs "de um frame só" (ex: ataque) aqui,
-        // na thread principal, onde eles são confiáveis (ver InputHandler.poll()).
         for (Player player : players) {
             player.pollInput();
         }
-
-        // O mundo agora só manda atualizar o visual (texturas/animação).
         for (Player player : players) {
-            player.visualRefresh(delta); // Nome adaptado para o camelCase usado na refatoração
+            player.visualRefresh(delta);
         }
+
         checkCombat();
         checkBodyCollision();
         checkMapLimit();
@@ -55,8 +78,6 @@ public class GameWorld {
     public void draw(SpriteBatch batch) {
         int p1Life = players.get(0).getModel().getLife();
         int p2Life = players.get(1).getModel().getLife();
-
-        // PEGA A ESTAMINA DOS JOGADORES (Vai de 0 a 100)
         float p1Stamina = players.get(0).getModel().getStamina();
         float p2Stamina = players.get(1).getModel().getStamina();
 
@@ -184,11 +205,6 @@ public class GameWorld {
         return players.get(0).getModel().getLife() <= 0 || players.get(1).getModel().getLife() <= 0;
     }
 
-    public int getPlayer1Life() {
-        return players.get(0).getModel().getLife();
-    }
-
-    public int getPlayer2Life() {
-        return players.get(1).getModel().getLife();
-    }
+    public int getPlayer1Life() { return players.get(0).getModel().getLife(); }
+    public int getPlayer2Life() { return players.get(1).getModel().getLife(); }
 }

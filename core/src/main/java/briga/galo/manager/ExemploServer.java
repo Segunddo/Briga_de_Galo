@@ -1,6 +1,4 @@
-package briga.galo.exemplos;
-
-import briga.galo.manager.ServerManager;
+package briga.galo.manager;
 
 /**
  * Exemplo de inicialização do lado SERVIDOR.

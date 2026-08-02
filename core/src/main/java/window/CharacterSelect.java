@@ -14,8 +14,7 @@ public class CharacterSelect {
         "default", "armadura", "gledson"
     };
 
-    private Texture p1Panel;
-    private Texture p2Panel;
+    private Texture panelTexture;
     private Texture cardTexture;
     private Texture readyTexture;
 
@@ -23,26 +22,19 @@ public class CharacterSelect {
     private BitmapFont font;
     private BitmapFont smallFont;
 
-    private int p1Index = 0;
-    private int p2Index = 0;
-    private boolean p1Ready = false;
-    private boolean p2Ready = false;
+    private int selectedIndex = 0;
+    private boolean isReady = false;
 
     private float blinkTimer = 0f;
     private boolean showBlinkText = true;
 
     public CharacterSelect() {
-        Pixmap pix1 = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pix1.setColor(new Color(0, 0, 0.5f, 0.6f));
-        pix1.fill();
-        p1Panel = new Texture(pix1);
-        pix1.dispose();
-
-        Pixmap pix2 = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pix2.setColor(new Color(0.5f, 0, 0, 0.6f));
-        pix2.fill();
-        p2Panel = new Texture(pix2);
-        pix2.dispose();
+        // Fundo do painel centralizado e mais elegante
+        Pixmap pix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pix.setColor(new Color(0.1f, 0.12f, 0.2f, 0.85f));
+        pix.fill();
+        panelTexture = new Texture(pix);
+        pix.dispose();
 
         Pixmap cardPixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         cardPixmap.setColor(new Color(1f, 1f, 1f, 0.12f));
@@ -67,12 +59,13 @@ public class CharacterSelect {
         smallFont.getData().setScale(1.8f);
     }
 
-    // Reseta a seleção - chame isso sempre que entrar nesta tela
     public void reset() {
-        p1Index = 0;
-        p2Index = 0;
-        p1Ready = false;
-        p2Ready = false;
+        selectedIndex = 0;
+        isReady = false;
+    }
+
+    public boolean isPlayer1Ready() {
+        return isReady;
     }
 
     public void update(float delta) {
@@ -82,109 +75,84 @@ public class CharacterSelect {
             blinkTimer = 0f;
         }
 
-        // Jogador 1: A/D navega, SPACE confirma, S cancela a confirmação
-        if (!p1Ready) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-                p1Index = (p1Index - 1 + AVAILABLE_SKINS.length) % AVAILABLE_SKINS.length;
-            } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-                p1Index = (p1Index + 1) % AVAILABLE_SKINS.length;
+        if (!isReady) {
+            // Suporta tanto A/D quanto Setas
+            if (Gdx.input.isKeyJustPressed(Input.Keys.A) || Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
+                selectedIndex = (selectedIndex - 1 + AVAILABLE_SKINS.length) % AVAILABLE_SKINS.length;
+            } else if (Gdx.input.isKeyJustPressed(Input.Keys.D) || Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
+                selectedIndex = (selectedIndex + 1) % AVAILABLE_SKINS.length;
             }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                p1Ready = true;
+            // Suporta tanto ESPAÇO quanto ENTER
+            if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                isReady = true;
             }
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            p1Ready = false;
-        }
-
-        // Jogador 2: SETAS navega, ENTER confirma, DOWN cancela a confirmação
-        if (!p2Ready) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
-                p2Index = (p2Index - 1 + AVAILABLE_SKINS.length) % AVAILABLE_SKINS.length;
-            } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
-                p2Index = (p2Index + 1) % AVAILABLE_SKINS.length;
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-                p2Ready = true;
-            }
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            p2Ready = false;
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            isReady = false;
         }
     }
 
     public void draw(SpriteBatch batch, float screenWidth, float screenHeight) {
-        float margin = 40f;
-        float panelWidth = (screenWidth / 2f) - (margin * 1.5f);
-        float panelHeight = screenHeight - (margin * 4f);
+        float panelWidth = 700f;
+        float panelHeight = 500f;
 
-        float p1X = margin;
-        float p2X = (screenWidth / 2f) + (margin / 2f);
-        float panelY = margin * 2;
+        // Matemática para cravar o painel exatamente no meio da tela
+        float panelX = (screenWidth - panelWidth) / 2f;
+        float panelY = (screenHeight - panelHeight) / 2f;
 
-        batch.draw(p1Panel, p1X, panelY, panelWidth, panelHeight);
-        batch.draw(p2Panel, p2X, panelY, panelWidth, panelHeight);
+        batch.draw(panelTexture, panelX, panelY, panelWidth, panelHeight);
 
-        titleFont.draw(batch, "ESCOLHA SEU PERSONAGEM", screenWidth / 2f - 380, screenHeight - 40);
+        titleFont.draw(batch, "ESCOLHA SEU PERSONAGEM", screenWidth / 2f - 380, screenHeight - 60);
 
-        drawPlayerSide(batch, "JOGADOR 1", Color.CYAN, p1X, panelY, panelWidth, panelHeight, p1Index, p1Ready,
-            "A / D - Trocar    SPACE - Confirmar");
+        drawPlayerSide(batch, "SEU LUTADOR", Color.CYAN, panelX, panelY, panelWidth, panelHeight, selectedIndex, isReady,
+            "A / D - Trocar   SPACE - Confirmar");
 
-        drawPlayerSide(batch, "JOGADOR 2", Color.CORAL, p2X, panelY, panelWidth, panelHeight, p2Index, p2Ready,
-            "SETAS - Trocar    ENTER - Confirmar");
-
-        // Mensagem central piscando quando os dois estiverem prontos
-        if (p1Ready && p2Ready && showBlinkText) {
+        // Mensagem fora do painel avisando o estado atual
+        if (isReady && showBlinkText) {
             font.setColor(Color.YELLOW);
-            font.draw(batch, "Iniciando partida...", screenWidth / 2f - 160, panelY + 40);
+            font.draw(batch, "Confirmado! Entrando na sala...", screenWidth / 2f - 210, panelY - 40);
         }
     }
 
     private void drawPlayerSide(SpriteBatch batch, String label, Color labelColor,
                                 float x, float y, float width, float height,
-                                int selectedIndex, boolean ready, String instructions) {
+                                int selectedIdx, boolean ready, String instructions) {
 
         smallFont.setColor(labelColor);
-        smallFont.draw(batch, label, x + 50, y + height - 60);
+        smallFont.draw(batch, label, x + width / 2f - 90, y + height - 40);
 
-        // "Carta" com o nome do personagem selecionado
-        float cardWidth = width - 100f;
-        float cardHeight = 260f;
-        float cardX = x + 50f;
-        float cardY = y + height - 420f;
+        // A "Carta" agora é maior e fica bem no centro do painel
+        float cardWidth = width - 160f;
+        float cardHeight = 300f;
+        float cardX = x + 80f;
+        float cardY = y + height - 380f;
 
         batch.draw(ready ? readyTexture : cardTexture, cardX, cardY, cardWidth, cardHeight);
 
         font.setColor(Color.WHITE);
-        String skinName = AVAILABLE_SKINS[selectedIndex];
-        font.draw(batch, skinName.toUpperCase(), cardX + 40, cardY + (cardHeight / 2f) + 15);
+        String skinName = AVAILABLE_SKINS[selectedIdx];
+
+        float textOffsetX = skinName.length() * 11f;
+        font.draw(batch, skinName.toUpperCase(), cardX + (cardWidth / 2f) - textOffsetX, cardY + (cardHeight / 2f) + 15);
 
         smallFont.setColor(Color.LIGHT_GRAY);
-        smallFont.draw(batch, "(" + (selectedIndex + 1) + "/" + AVAILABLE_SKINS.length + ")",
-            cardX + 40, cardY + (cardHeight / 2f) - 30);
+        smallFont.draw(batch, "(" + (selectedIdx + 1) + "/" + AVAILABLE_SKINS.length + ")",
+            cardX + (cardWidth / 2f) - 35f, cardY + (cardHeight / 2f) - 30);
 
         if (ready) {
             smallFont.setColor(Color.GREEN);
-            smallFont.draw(batch, "PRONTO!", cardX + 40, cardY + cardHeight - 20);
+            smallFont.draw(batch, "PRONTO!", cardX + (cardWidth / 2f) - 50f, cardY + cardHeight - 20);
         }
 
         smallFont.setColor(Color.GRAY);
-        smallFont.draw(batch, instructions, x + 50, y + 60);
+        smallFont.draw(batch, instructions, x + width / 2f - 200, y + 40);
     }
 
     public String getPlayer1SkinId() {
-        return AVAILABLE_SKINS[p1Index];
-    }
-
-    public String getPlayer2SkinId() {
-        return AVAILABLE_SKINS[p2Index];
-    }
-
-    public boolean isBothReady() {
-        return p1Ready && p2Ready;
+        return AVAILABLE_SKINS[selectedIndex];
     }
 
     public void dispose() {
-        p1Panel.dispose();
-        p2Panel.dispose();
+        panelTexture.dispose();
         cardTexture.dispose();
         readyTexture.dispose();
         titleFont.dispose();

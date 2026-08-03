@@ -6,6 +6,7 @@ public class Utils {
         WALK_LEFT,
         FLY_RIGHT,
         FLY_LEFT,
+        FLY,
         ATTACK,
         FLY_ATTACK_LEFT,
         FLY_ATTACK_RIGHT,

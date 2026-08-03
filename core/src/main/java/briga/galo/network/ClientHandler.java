@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
         this.serverManager = serverManager;
         try {
+            socket.setTcpNoDelay(true);
             this.out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {

@@ -233,7 +233,11 @@ public class PlayerModel {
             if (isDefending) return isHeadingLeft ? Utils.Action.DEFEND_LEFT : Utils.Action.DEFEND_RIGHT;
             if (isAirAttacking) return isHeadingLeft ? Utils.Action.FLY_ATTACK_LEFT : Utils.Action.FLY_ATTACK_RIGHT;
             if (isAttacking) return Utils.Action.ATTACK;
-            if (!isOnFloor) return isHeadingLeft ? Utils.Action.FLY_LEFT : Utils.Action.FLY_RIGHT;
+            if (!isOnFloor) {
+                if (isHoldingRight) return Utils.Action.FLY_RIGHT;
+                if (isHoldingLeft) return Utils.Action.FLY_LEFT;
+                return Utils.Action.FLY;
+            }
             if (isWalkingRight) return Utils.Action.WALK_RIGHT;
             if (isWalkingLeft) return Utils.Action.WALK_LEFT;
             if (isHeadingLeft) return Utils.Action.LEFT_HANDLE;

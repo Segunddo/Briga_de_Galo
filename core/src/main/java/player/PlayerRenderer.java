@@ -52,6 +52,9 @@ public class PlayerRenderer {
             case FLY_LEFT:
                 currentFrame = skin.getAnimation(SpriteType.FLY_LEFT).getKeyFrame(stateTime);
                 break;
+            case FLY:
+                currentFrame = headingLeft ? skin.getAnimation(SpriteType.FLY_LEFT).getKeyFrame(stateTime) : skin.getAnimation(SpriteType.FLY_RIGHT).getKeyFrame(stateTime);
+                break;
             case FLY_ATTACK_LEFT:
                 currentFrame = skin.getAnimation(SpriteType.ATTACK_LEFT).getKeyFrame(stateTime);
                 break;

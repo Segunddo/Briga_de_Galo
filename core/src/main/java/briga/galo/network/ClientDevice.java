@@ -29,6 +29,7 @@ public class ClientDevice {
     public void connect(String ip, int port) {
         try {
             socket = new Socket(ip, port);
+            socket.setTcpNoDelay(true);
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             notificar("Conectado a " + ip + ":" + port);

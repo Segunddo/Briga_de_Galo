@@ -101,6 +101,7 @@ public class GameWorld {
         float p2_y = p2Model.getY();
         float p2_size = p2Model.getHitBox();
 
+        // Se nenhuma dessas exclusões for falsa, significa que não há espaço livre entre eles em nenhum dos 4 lados.
         return (p1_x < p2_x + p2_size) &&
             (p1_x + p1_size > p2_x) &&
             (p1_y < p2_y + p2_size) &&
